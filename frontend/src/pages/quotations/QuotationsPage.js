@@ -11,6 +11,7 @@ const EMPTY_FORM = { siteId: '', notes: '', validUntil: '', status: 'draft' };
 const EMPTY_ITEM = { description: '', quantity: 1, rate: 0, amount: 0 };
 
 export default function QuotationsPage() {
+  const [search, setSearch] = useState('');
   const [quotations, setQuotations] = useState([]);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +96,10 @@ export default function QuotationsPage() {
     } catch (err) { toast.error(getError(err)); }
     finally { setDeleting(false); }
   };
+  const filteredQuotations = quotations.filter((quot) =>
+  quot.quotationNumber?.toLowerCase().includes(search.toLowerCase()) ||
+  quot.siteId?.name?.toLowerCase().includes(search.toLowerCase())
+);
 
   return (
     <div>
@@ -107,6 +112,14 @@ export default function QuotationsPage() {
       </div>
 
       <div className="filters-bar">
+        <input
+  type="text"
+  placeholder="Search quotation..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  className="form-control"
+  style={{ maxWidth: 220 }}
+/>
         <select className="form-control" value={filterSite} onChange={(e) => setFilterSite(e.target.value)}>
           <option value="">All Sites</option>
           {sites.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
@@ -124,7 +137,7 @@ export default function QuotationsPage() {
       <div className="card">
         {loading ? (
           <div className="empty-state"><p>Loading...</p></div>
-        ) : quotations.length === 0 ? (
+        ) : filteredQuotations.length === 0? (
           <div className="empty-state"><div className="icon">📋</div><p>No quotations yet</p></div>
         ) : (
           <div className="table-wrapper">
@@ -136,7 +149,7 @@ export default function QuotationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {quotations.map((quot) => (
+                {filteredQuotations.map((quot) => (
                   <tr key={quot._id}>
                     <td style={{ fontWeight: 600, color: '#1e40af', cursor: 'pointer' }}
                       onClick={() => navigate(`/quotations/${quot._id}`)}>

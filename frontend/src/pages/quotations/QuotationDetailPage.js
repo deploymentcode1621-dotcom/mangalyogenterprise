@@ -5,6 +5,7 @@ import { formatCurrency, formatDate, statusColor, getError } from '../../utils/h
 import toast from 'react-hot-toast';
 
 export default function QuotationDetailPage() {
+  const [search, setSearch] = useState('');
   const { id } = useParams();
   const navigate = useNavigate();
   const [quotation, setQuotation] = useState(null);

@@ -11,6 +11,7 @@ const EMPTY_FORM = { siteId: '', notes: '', dueDate: '', status: 'unpaid' };
 const EMPTY_ITEM = { description: '', quantity: 1, rate: 0, amount: 0 };
 
 export default function InvoicesPage() {
+  const [search, setSearch] = useState('');
   const [invoices, setInvoices] = useState([]);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,12 @@ export default function InvoicesPage() {
   const [filterSite, setFilterSite] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const navigate = useNavigate();
+  
+  const filteredInvoices = invoices.filter((inv) =>
+    inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase().trim()) ||
+    inv.siteId?.name?.toLowerCase().includes(search.toLowerCase().trim())
+  );
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -94,10 +101,14 @@ export default function InvoicesPage() {
       </div>
 
       <div className="filters-bar">
-        <select className="form-control" value={filterSite} onChange={(e) => setFilterSite(e.target.value)}>
-          <option value="">All Sites</option>
-          {sites.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-        </select>
+  <input
+    type="text"
+    placeholder="Search invoice..."
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    className="form-control"
+    style={{ maxWidth: 220 }}
+  />
         <select className="form-control" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
           <option value="">All Status</option>
           <option value="paid">Paid</option>
@@ -110,7 +121,7 @@ export default function InvoicesPage() {
       <div className="card">
         {loading ? (
           <div className="empty-state"><p>Loading...</p></div>
-        ) : invoices.length === 0 ? (
+        ) : filteredInvoices.length === 0? (
           <div className="empty-state"><div className="icon">🧾</div><p>No invoices yet</p></div>
         ) : (
           <div className="table-wrapper">
@@ -122,7 +133,7 @@ export default function InvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.map((inv) => (
+                {filteredInvoices.map((inv) => (
                   <tr key={inv._id}>
                     <td style={{ fontWeight: 600, color: '#1e40af', cursor: 'pointer' }}
                       onClick={() => navigate(`/invoices/${inv._id}`)}>

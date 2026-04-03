@@ -23,6 +23,35 @@ export default function SitesPage() {
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
   const fetchSites = async () => {
     try {
       const res = await sitesAPI.getAll();
@@ -34,11 +63,19 @@ export default function SitesPage() {
   useEffect(() => { fetchSites(); }, []);
 
   const openAdd = () => { setEditSite(null); setForm(EMPTY_FORM); setModalOpen(true); };
+
   const openEdit = (site) => {
     setEditSite(site);
-    setForm({ name: site.name, address: site.address, ownerName: site.ownerName || '',
-      phone: site.phone || '', gstNumber: site.gstNumber || '', projectName: site.projectName || '',
-      status: site.status, notes: site.notes || '' });
+    setForm({
+      name: site.name,
+      address: site.address,
+      ownerName: site.ownerName || '',
+      phone: site.phone || '',
+      gstNumber: site.gstNumber || '',
+      projectName: site.projectName || '',
+      status: site.status,
+      notes: site.notes || ''
+    });
     setModalOpen(true);
   };
 
@@ -108,24 +145,42 @@ export default function SitesPage() {
       ) : (
         <div className="grid-3">
           {filtered.map((site) => (
-            <div key={site._id} className="card" style={{ cursor: 'pointer', position: 'relative' }}
-              onClick={() => navigate(`/sites/${site._id}`)}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div style={{ fontWeight: 700, fontSize: 16, color: '#1e293b' }}>{site.name}</div>
-                <span className={`badge ${statusColor(site.status)}`}>{site.status}</span>
+            <div
+              key={site._id}
+              className="card"
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 16px'
+              }}
+              onClick={() => navigate(`/sites/${site._id}`)}
+            >
+              {/* Site Name */}
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#1e293b' }}>
+                {site.name}
               </div>
-              <div style={{ fontSize: 13, color: '#64748b', marginBottom: 6 }}>📍 {site.address}</div>
-              {site.ownerName && <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>👤 {site.ownerName}</div>}
-              {site.phone && <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>📞 {site.phone}</div>}
-              {site.projectName && <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>📁 {site.projectName}</div>}
-              {site.gstNumber && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>GST: {site.gstNumber}</div>}
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 10 }}>Added {formatDate(site.createdAt)}</div>
+
               {/* Actions */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}
-                onClick={(e) => e.stopPropagation()}>
-                <button className="btn btn-outline btn-sm" onClick={() => openEdit(site)}>✏️ Edit</button>
-                <button className="btn btn-outline btn-sm" style={{ color: '#dc2626' }}
-                  onClick={() => setDeleteTarget(site)}>🗑️</button>
+              <div
+                style={{ display: 'flex', gap: 10 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => openEdit(site)}
+                >
+                  ✏️
+                </button>
+
+                <button
+                  className="btn btn-outline btn-sm"
+                  style={{ color: '#dc2626' }}
+                  onClick={() => setDeleteTarget(site)}
+                >
+                  🗑️
+                </button>
               </div>
             </div>
           ))}
@@ -177,12 +232,14 @@ export default function SitesPage() {
                 </select>
               </div>
             </div>
+
             <div className="form-group">
               <label className="form-label">Notes</label>
               <textarea className="form-control" rows={3} placeholder="Additional notes..."
                 value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </div>
           </div>
+
           <div className="modal-footer">
             <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>

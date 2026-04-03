@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [search, setSearch] = useState('');
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingStatus, setUpdatingStatus] = useState(false);
