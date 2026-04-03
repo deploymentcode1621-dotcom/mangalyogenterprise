@@ -8,24 +8,12 @@ export default function Layout() {
 
   return (
     <div className="app-layout">
-      
-      {/* Sidebar */}
-      <Sidebar 
-        open={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-      />
-
-      {/* Main Content */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="main-content">
-        
-        {/* Topbar (Menu Button Opens Sidebar) */}
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
-
-        {/* Page Content */}
         <main className="page-content">
           <Outlet />
         </main>
-
       </div>
     </div>
   );

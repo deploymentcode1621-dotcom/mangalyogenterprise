@@ -12,7 +12,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ open, onClose }) {
-  const { logout } = useAuth();
+  const { admin, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -23,7 +23,6 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {/* Overlay */}
       {open && (
         <div
           className="sidebar-overlay"
@@ -31,66 +30,45 @@ export default function Sidebar({ open, onClose }) {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`sidebar ${open ? 'open' : ''}`}>
+        
+        {/* Logo + Back Button */}
+        <div style={{
+          padding: '20px',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
 
-        {/* Header */}
-        <div style={{ padding: '24px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-
-            {/* Brand */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                background: 'rgba(255,255,255,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-              }}>
-                🏢
+          {/* LEFT: Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20,
+            }}>🏢</div>
+            <div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
+                Mangalyog
               </div>
-              <div>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
-                  Mangalyog
-                </div>
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
-                  Enterprise
-                </div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+                Enterprise
               </div>
             </div>
-
-            {/* 🔥 FIXED CLOSE BUTTON */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log("Arrow clicked");
-                onClose();
-              }}
-              title="Close Sidebar"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255,255,255,0.12)',
-                border: 'none',
-                borderRadius: 8,
-                width: 32,
-                height: 32,
-                cursor: 'pointer',
-                color: '#fff',
-                zIndex: 1001
-              }}
-            >
-              ←
-            </button>
-
           </div>
+
+          {/* RIGHT: Back Button (Mobile Only) */}
+          <button
+            onClick={onClose}
+            className="sidebar-back-btn"
+          >
+            ←
+          </button>
         </div>
 
-        {/* Navigation */}
+        {/* Nav */}
         <nav style={{ flex: 1, paddingTop: 12 }}>
           {navItems.map(({ path, label, icon, end }) => (
             <NavLink
@@ -106,7 +84,7 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
 
-        {/* Footer */}
+        {/* User + Logout */}
         <div style={{ padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{
             background: 'rgba(255,255,255,0.1)',
@@ -115,10 +93,10 @@ export default function Sidebar({ open, onClose }) {
             marginBottom: 10,
           }}>
             <div style={{ color: '#fff', fontWeight: 600, fontSize: 13 }}>
-              MangalYog Enterprises
+              {admin?.name}
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>
-              Founder Raghuraj Patil
+            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+              {admin?.email}
             </div>
           </div>
 
@@ -129,13 +107,12 @@ export default function Sidebar({ open, onClose }) {
               width: '100%',
               color: 'rgba(255,255,255,0.8)',
               borderColor: 'rgba(255,255,255,0.2)',
-              justifyContent: 'center',
+              justifyContent: 'center'
             }}
           >
             🚪 Logout
           </button>
         </div>
-
       </aside>
     </>
   );
