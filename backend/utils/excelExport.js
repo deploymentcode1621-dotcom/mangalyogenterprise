@@ -10,29 +10,52 @@ const exportTransactionsToExcel = async (transactions, siteName = 'All Sites') =
 
   const sheet = workbook.addWorksheet(`${siteName} - Transactions`);
 
-  // Header row styling
+  // ✅ TITLE ROW (Row 1)
+  sheet.mergeCells('A1:G1');
+  const titleCell = sheet.getCell('A1');
+  titleCell.value = 'MangalYog Enterprises';
+  titleCell.font = { bold: true, size: 16, color: { argb: 'FFDC2626' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // ✅ ADD SPACE BELOW TITLE
+  sheet.getRow(1).height = 28;
+
+  // ✅ DEFINE COLUMNS (WITHOUT HEADER AUTO-INSERT)
   sheet.columns = [
-    { header: 'Date', key: 'date', width: 14 },
-    { header: 'Name', key: 'name', width: 22 },
-    { header: 'Description', key: 'description', width: 30 },
-    { header: 'Type', key: 'type', width: 8 },
-    { header: 'Amount (Rs.)', key: 'amount', width: 14 },
-    { header: 'Payment Mode', key: 'paymentMode', width: 14 },
-    { header: 'Note', key: 'note', width: 25 },
+    { key: 'date', width: 14 },
+    { key: 'name', width: 22 },
+    { key: 'description', width: 30 },
+    { key: 'type', width: 8 },
+    { key: 'amount', width: 14 },
+    { key: 'paymentMode', width: 14 },
+    { key: 'note', width: 25 },
   ];
 
-  sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  sheet.getRow(1).fill = {
+  // ✅ HEADER ROW (Row 2)
+  const headerRow = sheet.getRow(2);
+  headerRow.values = [
+    'Date',
+    'Name',
+    'Description',
+    'Type',
+    'Amount (Rs.)',
+    'Payment Mode',
+    'Note',
+  ];
+
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FF1E40AF' },
   };
-  sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
-  sheet.getRow(1).height = 22;
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+  headerRow.height = 22;
 
   let totalIn = 0;
   let totalOut = 0;
 
+  // ✅ DATA STARTS FROM ROW 3
   transactions.forEach((txn) => {
     const row = sheet.addRow({
       date: new Date(txn.date).toLocaleDateString('en-IN'),
@@ -44,20 +67,12 @@ const exportTransactionsToExcel = async (transactions, siteName = 'All Sites') =
       note: txn.note || '',
     });
 
-
-
-
-
-
-
-
-    
-
     // Color IN green, OUT red
     row.getCell('type').font = {
       color: { argb: txn.type === 'IN' ? 'FF16A34A' : 'FFDC2626' },
       bold: true,
     };
+
     row.getCell('amount').numFmt = '#,##0.00';
 
     if (txn.type === 'IN') totalIn += txn.amount;
