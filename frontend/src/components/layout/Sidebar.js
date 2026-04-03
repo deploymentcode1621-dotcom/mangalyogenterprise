@@ -2,12 +2,13 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import logo from '../../assets/mangalyogfinallogo.png';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '📊', end: true },
+  { path: '/', label: 'Dashboard', icon: '📊', end: true, section: 'Main' },
   { path: '/sites', label: 'Sites', icon: '🏗️' },
   { path: '/transactions', label: 'Transactions', icon: '💰' },
-  { path: '/invoices', label: 'Invoices', icon: '🧾' },
+  { path: '/invoices', label: 'Invoices', icon: '🧾', section: 'Documents' },
   { path: '/quotations', label: 'Quotations', icon: '📋' },
 ];
 
@@ -23,96 +24,138 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {open && (
-        <div
-          className="sidebar-overlay"
-          onClick={onClose}
-        />
-      )}
+      {open && <div className="sidebar-overlay" onClick={onClose} />}
 
       <aside className={`sidebar ${open ? 'open' : ''}`}>
-        
-        {/* Logo + Back Button */}
-        <div style={{
-          padding: '20px',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
 
-          {/* LEFT: Logo */}
+        {/* Logo */}
+        <div style={{
+          padding: '16px 18px 14px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+
+            {/* Logo Image */}
             <div style={{
-              width: 38, height: 38, borderRadius: 10,
-              background: 'rgba(255,255,255,0.2)',
+              width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+              background: '#ffffff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20,
-            }}>🏢</div>
+              padding: 4,
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.15)',
+            }}>
+              <img
+                src={logo}
+                alt="MangalYog Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 6 }}
+              />
+            </div>
+
             <div>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
-                Mangalyog
+              <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14, letterSpacing: '0.01em' }}>
+                MangalYog
               </div>
-              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11 }}>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 1 }}>
                 Enterprise
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Back Button (Mobile Only) */}
+          {/* Close Button (Mobile Only) */}
           <button
             onClick={onClose}
             className="sidebar-back-btn"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 32, height: 32, borderRadius: 8,
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              color: '#fff', fontSize: 16, cursor: 'pointer', flexShrink: 0,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
           >
-            ←
+            ✕
           </button>
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, paddingTop: 12 }}>
-          {navItems.map(({ path, label, icon, end }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={end}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={onClose}
-            >
-              <span className="nav-icon">{icon}</span>
-              {label}
-            </NavLink>
+        <nav style={{ flex: 1, paddingTop: 10 }}>
+          {navItems.map(({ path, label, icon, end, section }) => (
+            <React.Fragment key={path}>
+              {section && (
+                <div style={{
+                  padding: '14px 18px 6px',
+                  fontSize: 10, fontWeight: 600,
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
+                  color: 'rgba(255,255,255,0.25)',
+                }}>
+                  {section}
+                </div>
+              )}
+              <NavLink
+                to={path}
+                end={end}
+                onClick={onClose}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+              >
+                <span className="nav-icon">{icon}</span>
+                {label}
+              </NavLink>
+            </React.Fragment>
           ))}
         </nav>
 
-        {/* User + Logout */}
-        <div style={{ padding: '16px 12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        {/* Founder + Logout */}
+        <div style={{ padding: '12px 12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{
-            background: 'rgba(255,255,255,0.1)',
-            borderRadius: 10,
-            padding: '12px 14px',
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 11, padding: '12px 14px',
             marginBottom: 10,
+            display: 'flex', alignItems: 'center', gap: 11,
           }}>
-            <div style={{ color: '#fff', fontWeight: 600, fontSize: 13 }}>
-              {admin?.name}
+            <div style={{
+              width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+              background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14, fontWeight: 700, color: '#fff',
+            }}>
+              RP
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
-              {admin?.email}
+            <div>
+              <div style={{ color: '#f1f5f9', fontWeight: 600, fontSize: 13 }}>
+                Raghuraj Patil
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 }}>
+                Founder · MangalYog Enterprise
+              </div>
             </div>
           </div>
 
           <button
             onClick={handleLogout}
-            className="btn btn-outline"
             style={{
-              width: '100%',
-              color: 'rgba(255,255,255,0.8)',
-              borderColor: 'rgba(255,255,255,0.2)',
-              justifyContent: 'center'
+              width: '100%', padding: '9px',
+              borderRadius: 8,
+              background: 'rgba(239,68,68,0.1)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: 'rgba(239,68,68,0.8)',
+              fontSize: 13, fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              fontFamily: 'Inter, sans-serif',
+              transition: 'all 0.15s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#fca5a5'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.8)'; }}
           >
             🚪 Logout
           </button>
         </div>
+
       </aside>
     </>
   );
