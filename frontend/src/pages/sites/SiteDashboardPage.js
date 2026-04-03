@@ -26,6 +26,7 @@ export default function SiteDashboardPage() {
   const [deleting, setDeleting] = useState(false);
   const [filter, setFilter] = useState('ALL');
   const [exporting, setExporting] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -117,27 +118,85 @@ export default function SiteDashboardPage() {
 
       {/* Site Header */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1e293b' }}>{site?.name}</h2>
-            <p style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>📍 {site?.address}</p>
-            {site?.projectName && <p style={{ color: '#64748b', fontSize: 14 }}>📁 {site.projectName}</p>}
-            {site?.ownerName && <p style={{ color: '#64748b', fontSize: 14 }}>👤 {site.ownerName} {site.phone && `· 📞 ${site.phone}`}</p>}
-          </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  
+  <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1e293b', margin: 0 }}>
+    {site?.name}
+  </h2>
+
+  <button
+    className="btn btn-outline btn-sm"
+    onClick={() => setShowDetails(!showDetails)}
+  >
+    👁️
+  </button>
+
+</div>
+
+{showDetails && (
+  <div style={{ fontSize: 14, color: '#64748b' }}>
+    <p>📍 {site?.address}</p>
+    {site?.projectName && <p>📁 {site.projectName}</p>}
+    {site?.ownerName && <p>👤 {site.ownerName} {site.phone && `· 📞 ${site.phone}`}</p>}
+  </div>
+)}
+        {/* <div style={{ display: 'flex', gap:10}}>
             <button className="btn btn-success" onClick={() => openAdd('IN')}>+ Money IN</button>
             <button className="btn btn-danger" onClick={() => openAdd('OUT')}>- Money OUT</button>
             <button className="btn btn-outline" onClick={handleExport} disabled={exporting}>
               {exporting ? '...' : '📥 Export Excel'}
             </button>
-          </div>
+          </div> */}
+          {/* Money Buttons
+<div style={{ display: 'flex', gap: 10, marginTop: 16 , width: '100%' }}>
+  <button className="btn btn-success" style={{ flex: 1, minWidth:0}}
+  onClick={() => openAdd('IN')}>
+    + Money IN
+  </button>
+
+  <button className="btn btn-danger" style={{ flex: 1 , minWidth: 0 }}
+  onClick={() => openAdd('OUT')}>
+    - Money OUT
+  </button>
+</div> */}
+{/* Money Buttons */}
+<div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+  
+  <button
+    className="btn btn-success"
+    style={{ flex: '1 1 48%' }}
+    onClick={() => openAdd('IN')}
+  >
+    + Money IN
+  </button>
+
+  <button
+    className="btn btn-danger"
+    style={{ flex: '1 1 48%' }}
+    onClick={() => openAdd('OUT')}
+  >
+    - Money OUT
+  </button>
+
+</div>
+
+{/* Export Button */}
+<button
+  className="btn btn-outline"
+  style={{ width: '100%', marginTop: 10 }}
+  onClick={handleExport}
+  disabled={exporting}
+>
+  {exporting ? '...' : '📊 Export Excel'}
+</button>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid-3" style={{ marginBottom: 24 }}>
-        <StatCard label="Total IN" value={formatCurrency(data?.totalIn)} icon="💚" color="#16a34a" />
-        <StatCard label="Total OUT" value={formatCurrency(data?.totalOut)} icon="🔴" color="#dc2626" />
+        <StatCard label="Total IN" value={formatCurrency(data?.totalIn)} icon="💵" color="#16a34a" />
+        <StatCard label="Total OUT" value={formatCurrency(data?.totalOut)} icon="📤" color="#dc2626" />
         <StatCard label="Balance" value={formatCurrency(data?.balance)} icon="💰" color="#1e40af"
           sub={data?.balance >= 0 ? 'Surplus' : 'Deficit'} />
       </div>
@@ -258,3 +317,7 @@ export default function SiteDashboardPage() {
     </div>
   );
 }
+
+
+
+
