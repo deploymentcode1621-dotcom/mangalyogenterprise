@@ -25,26 +25,35 @@ export default function InvoicesPage() {
   const [filterSite, setFilterSite] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const navigate = useNavigate();
-  
+
   const filteredInvoices = invoices.filter((inv) =>
     inv.invoiceNumber?.toLowerCase().includes(search.toLowerCase().trim()) ||
     inv.siteId?.name?.toLowerCase().includes(search.toLowerCase().trim())
   );
-
 
   const fetchData = useCallback(async () => {
     try {
       const params = {};
       if (filterSite) params.siteId = filterSite;
       if (filterStatus) params.status = filterStatus;
-      const [invRes, sitesRes] = await Promise.all([invoicesAPI.getAll(params), sitesAPI.getAll()]);
+
+      const [invRes, sitesRes] = await Promise.all([
+        invoicesAPI.getAll(params),
+        sitesAPI.getAll(),
+      ]);
+
       setInvoices(invRes.data);
       setSites(sitesRes.data);
-    } catch { toast.error('Failed to load invoices'); }
-    finally { setLoading(false); }
+    } catch {
+      toast.error('Failed to load invoices');
+    } finally {
+      setLoading(false);
+    }
   }, [filterSite, filterStatus]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -55,16 +64,26 @@ export default function InvoicesPage() {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+
     if (!form.siteId) return toast.error('Please select a site');
-    if (items.some((i) => !i.description || !i.rate)) return toast.error('Fill all item fields');
+    if (items.some((i) => !i.description || !i.rate))
+      return toast.error('Fill all item fields');
+
     setSaving(true);
     try {
-      await invoicesAPI.create({ ...form, items, taxRate: parseFloat(taxRate) || 0 });
+      await invoicesAPI.create({
+        ...form,
+        items,
+        taxRate: parseFloat(taxRate) || 0,
+      });
       toast.success('Invoice created');
       setModalOpen(false);
       fetchData();
-    } catch (err) { toast.error(getError(err)); }
-    finally { setSaving(false); }
+    } catch (err) {
+      toast.error(getError(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownloadPDF = async (inv) => {
@@ -72,11 +91,17 @@ export default function InvoicesPage() {
       const res = await invoicesAPI.downloadPDF(inv._id);
       const blob = new Blob([res.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
+
       const a = document.createElement('a');
-      a.href = url; a.download = `${inv.invoiceNumber}.pdf`; a.click();
+      a.href = url;
+      a.download = `${inv.invoiceNumber}.pdf`;
+      a.click();
+
       URL.revokeObjectURL(url);
       toast.success('PDF downloaded');
-    } catch { toast.error('PDF download failed'); }
+    } catch {
+      toast.error('PDF download failed');
+    }
   };
 
   const handleDelete = async () => {
@@ -86,127 +111,298 @@ export default function InvoicesPage() {
       toast.success('Invoice deleted');
       setDeleteTarget(null);
       fetchData();
-    } catch (err) { toast.error(getError(err)); }
-    finally { setDeleting(false); }
+    } catch (err) {
+      toast.error(getError(err));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
     <div>
+      {/* HEADER */}
       <div className="page-header">
         <div>
           <h2 className="page-title">Invoices</h2>
-          <p className="page-subtitle">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">
+            {invoices.length} invoice{invoices.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={openCreate}>+ Create Invoice</button>
+        <button className="btn btn-primary" onClick={openCreate}>
+          + Create Invoice
+        </button>
       </div>
 
+      {/* FILTERS */}
       <div className="filters-bar">
-  <input
-    type="text"
-    placeholder="Search invoice..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-    className="form-control"
-    style={{ maxWidth: 220 }}
-  />
-        <select className="form-control" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+        <input
+          type="text"
+          placeholder="Search invoice..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="form-control"
+          style={{ maxWidth: 220 }}
+        />
+
+        <select
+          className="form-control"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
           <option value="">All Status</option>
           <option value="paid">Paid</option>
           <option value="unpaid">Unpaid</option>
           <option value="cancelled">Cancelled</option>
         </select>
-        <button className="btn btn-outline btn-sm" onClick={() => { setFilterSite(''); setFilterStatus(''); }}>Clear</button>
+
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => {
+            setFilterSite('');
+            setFilterStatus('');
+          }}
+        >
+          Clear
+        </button>
       </div>
 
+      {/* MAIN CARD */}
       <div className="card">
         {loading ? (
-          <div className="empty-state"><p>Loading...</p></div>
-        ) : filteredInvoices.length === 0? (
-          <div className="empty-state"><div className="icon">🧾</div><p>No invoices yet</p></div>
-        ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Invoice #</th><th>Site</th><th>Date</th>
-                  <th>Due Date</th><th>Total</th><th>Status</th><th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map((inv) => (
-                  <tr key={inv._id}>
-                    <td style={{ fontWeight: 600, color: '#1e40af', cursor: 'pointer' }}
-                      onClick={() => navigate(`/invoices/${inv._id}`)}>
-                      {inv.invoiceNumber}
-                    </td>
-                    <td>{inv.siteId?.name || '—'}</td>
-                    <td>{formatDate(inv.date)}</td>
-                    <td>{formatDate(inv.dueDate)}</td>
-                    <td style={{ fontWeight: 700 }}>{formatCurrency(inv.total)}</td>
-                    <td><span className={`badge ${statusColor(inv.status)}`}>{inv.status}</span></td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => navigate(`/invoices/${inv._id}`)}>👁️</button>
-                        <button className="btn btn-outline btn-sm" onClick={() => handleDownloadPDF(inv)}>📄</button>
-                        <button className="btn btn-outline btn-sm" style={{ color: '#dc2626' }}
-                          onClick={() => setDeleteTarget(inv)}>🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="empty-state">
+            <p>Loading...</p>
           </div>
+        ) : filteredInvoices.length === 0 ? (
+          <div className="empty-state">
+            <div className="icon">🧾</div>
+            <p>No invoices yet</p>
+          </div>
+        ) : (
+          <>
+            {/* DESKTOP TABLE */}
+            <div className="table-wrapper desktop-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Site</th>
+                    <th>Date</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((inv) => (
+                    <tr key={inv._id}>
+                      <td
+                        style={{
+                          fontWeight: 600,
+                          color: '#1e40af',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => navigate(`/invoices/${inv._id}`)}
+                      >
+                        {inv.invoiceNumber}
+                      </td>
+                      <td>{inv.siteId?.name || '—'}</td>
+                      <td>{formatDate(inv.date)}</td>
+                      <td>{formatDate(inv.dueDate)}</td>
+                      <td style={{ fontWeight: 700 }}>
+                        {formatCurrency(inv.total)}
+                      </td>
+                      <td>
+                        <span className={`badge ${statusColor(inv.status)}`}>
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() =>
+                              navigate(`/invoices/${inv._id}`)
+                            }
+                          >
+                            👁️
+                          </button>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => handleDownloadPDF(inv)}
+                          >
+                            📄
+                          </button>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            style={{ color: '#dc2626' }}
+                            onClick={() => setDeleteTarget(inv)}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* MOBILE CARDS */}
+            <div className="mobile-cards">
+              {filteredInvoices.map((inv) => (
+                <div key={inv._id} className="invoice-card">
+                  <div>
+                    <strong>#{inv.invoiceNumber}</strong>
+                  </div>
+                  <div>{inv.siteId?.name}</div>
+                  <div>Date: {formatDate(inv.date)}</div>
+                  <div>Due: {formatDate(inv.dueDate)}</div>
+                  <div>Total: {formatCurrency(inv.total)}</div>
+
+                  <div>
+                    Status:{' '}
+                    <span className={`badge ${statusColor(inv.status)}`}>
+                      {inv.status}
+                    </span>
+                  </div>
+
+                  <div className="card-actions">
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() =>
+                        navigate(`/invoices/${inv._id}`)
+                      }
+                    >
+                      👁️
+                    </button>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleDownloadPDF(inv)}
+                    >
+                      📄
+                    </button>
+                    <button
+                      className="btn btn-outline btn-sm"
+                      style={{ color: '#dc2626' }}
+                      onClick={() => setDeleteTarget(inv)}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Create Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Create Invoice" size="lg">
+      {/* MODAL */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Create Invoice"
+        size="lg"
+      >
         <form onSubmit={handleCreate}>
           <div className="modal-body">
             <div className="grid-2" style={{ marginBottom: 20 }}>
               <div className="form-group">
                 <label className="form-label">Site *</label>
-                <select className="form-control" value={form.siteId}
-                  onChange={(e) => setForm({ ...form, siteId: e.target.value })}>
+                <select
+                  className="form-control"
+                  value={form.siteId}
+                  onChange={(e) =>
+                    setForm({ ...form, siteId: e.target.value })
+                  }
+                >
                   <option value="">Select site</option>
-                  {sites.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+                  {sites.map((s) => (
+                    <option key={s._id} value={s._id}>
+                      {s.name}
+                    </option>
+                  ))}
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Status</label>
-                <select className="form-control" value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                <select
+                  className="form-control"
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value })
+                  }
+                >
                   <option value="unpaid">Unpaid</option>
                   <option value="paid">Paid</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Due Date</label>
-                <input type="date" className="form-control" value={form.dueDate}
-                  onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
+                <input
+                  type="date"
+                  className="form-control"
+                  value={form.dueDate}
+                  onChange={(e) =>
+                    setForm({ ...form, dueDate: e.target.value })
+                  }
+                />
               </div>
             </div>
-            <ItemsForm items={items} setItems={setItems} taxRate={taxRate} setTaxRate={setTaxRate} />
+
+            <ItemsForm
+              items={items}
+              setItems={setItems}
+              taxRate={taxRate}
+              setTaxRate={setTaxRate}
+            />
+
             <div className="form-group" style={{ marginTop: 16 }}>
               <label className="form-label">Notes</label>
-              <textarea className="form-control" rows={2} placeholder="Notes..."
-                value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <textarea
+                className="form-control"
+                rows={2}
+                placeholder="Notes..."
+                value={form.notes}
+                onChange={(e) =>
+                  setForm({ ...form, notes: e.target.value })
+                }
+              />
             </div>
           </div>
+
           <div className="modal-footer">
-            <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setModalOpen(false)}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={saving}
+            >
               {saving ? 'Creating...' : '🧾 Create Invoice'}
             </button>
           </div>
         </form>
       </Modal>
 
-      <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete} loading={deleting} title="Delete Invoice"
-        message={`Delete invoice ${deleteTarget?.invoiceNumber}?`} />
+      {/* DELETE CONFIRM */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete Invoice"
+        message={`Delete invoice ${deleteTarget?.invoiceNumber}?`}
+      />
     </div>
   );
 }

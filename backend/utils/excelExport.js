@@ -44,6 +44,15 @@ const exportTransactionsToExcel = async (transactions, siteName = 'All Sites') =
       note: txn.note || '',
     });
 
+
+
+
+
+
+
+
+    
+
     // Color IN green, OUT red
     row.getCell('type').font = {
       color: { argb: txn.type === 'IN' ? 'FF16A34A' : 'FFDC2626' },
