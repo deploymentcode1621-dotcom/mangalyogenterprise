@@ -90,9 +90,22 @@
 // module.exports = { generateInvoicePDF };
 
 const PDFDocument = require('pdfkit');
+const path = require('path');
 
 const generateInvoicePDF = (invoice, type = 'Invoice') => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
+
+  /* ================= WATERMARK LOGO ================= */
+  const logoPath = path.join(__dirname, '../assets/logo.png');
+
+  const logoWidth = 500;
+  const centerX = (doc.page.width - logoWidth) / 2;
+  const centerY = (doc.page.height - logoWidth) / 2;
+
+  doc.save();
+  doc.opacity(0.06);
+  doc.image(logoPath, centerX, centerY, { width: logoWidth });
+  doc.restore();
 
   /* ================= TOP ORANGE BAR ================= */
   doc.rect(0, 0, doc.page.width, 10).fill('#F97316');
@@ -149,7 +162,6 @@ const generateInvoicePDF = (invoice, type = 'Invoice') => {
     amount: 460
   };
 
-  // Header row
   doc.rect(50, tableTop, doc.page.width - 100, 25).stroke();
 
   doc.font('Helvetica-Bold').fontSize(10)
@@ -169,7 +181,7 @@ const generateInvoicePDF = (invoice, type = 'Invoice') => {
     doc.font('Helvetica').fontSize(10)
       .text(i + 1, col.sr + 5, rowY)
       .text(item.description, col.desc, rowY, { width: 220 })
-      .text(item.description, col.qty, rowY)
+      .text(item.quantity, col.qty, rowY) // ✅ FIXED HERE
       .text(`Rs.${item.rate.toLocaleString('en-IN')}`, col.rate, rowY)
       .text(`Rs.${amount.toLocaleString('en-IN')}`, col.amount, rowY);
 
@@ -195,37 +207,28 @@ const generateInvoicePDF = (invoice, type = 'Invoice') => {
     .text(`Rs.${total.toLocaleString('en-IN')}`, 450, rowY + 55);
 
   /* ================= NOTES ================= */
-  doc.moveDown(2);
-
   doc.font('Helvetica-Bold')
     .text('Note:', 50, rowY + 100);
 
-  // doc.font('Helvetica')
-  //   .fontSize(9)
-  //   .text('1. About this quotation Bill without including GST.', 50, rowY + 115)
-  //   .text('2. Water and electricity is in client scope.', 50, rowY + 130)
-  //   .text('3. If design change as per client requirement rate may change.', 50, rowY + 145)
-  //   .text('4. If piling holes collapse more than 15% extra charges will be charged.', 50, rowY + 160);
+  doc.font("Helvetica").fontSize(9);
 
-  doc.font("Helvetica")
-  .fontSize(9);
+  let notesArray = [];
 
-if (invoice.notes && invoice.notes.trim() !== "") {
-  const notesArray = invoice.notes.split("\n");
+  // ✅ supports both array & string
+  if (Array.isArray(invoice.notes)) {
+    notesArray = invoice.notes;
+  } else if (typeof invoice.notes === "string") {
+    notesArray = invoice.notes.split("\n");
+  }
 
   let y = rowY + 115;
 
   notesArray.forEach((note, index) => {
     if (note.trim() !== "") {
-      doc.text(`${index + 1}. ${note}`, 50, y, {
-        width: 500,
-      });
-
-      // Dynamic spacing (important for long text)
+      doc.text(`${index + 1}. ${note}`, 50, y, { width: 500 });
       y += doc.heightOfString(note, { width: 500 }) + 5;
     }
   });
-}
 
   /* ================= BOTTOM ORANGE BAR ================= */
   doc.rect(0, doc.page.height - 20, doc.page.width, 10).fill('#F97316');
