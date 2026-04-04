@@ -92,146 +92,210 @@
 const PDFDocument = require('pdfkit');
 const path = require('path');
 
+function numberToWords(num) {
+  const a = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+    "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen",
+    "Eighteen", "Nineteen"];
+  const b = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  if (num === 0) return "Zero";
+  if (num < 20) return a[num];
+  if (num < 100) return b[Math.floor(num / 10)] + " " + a[num % 10];
+  if (num < 1000) return a[Math.floor(num / 100)] + " Hundred " + numberToWords(num % 100);
+  if (num < 100000) return numberToWords(Math.floor(num / 1000)) + " Thousand " + numberToWords(num % 1000);
+  if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + " Lakh " + numberToWords(num % 100000);
+  return num;
+}
+
 const generateInvoicePDF = (invoice, type = 'Invoice') => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
-  /* ================= WATERMARK LOGO ================= */
+  /* ========= WATERMARK ========= */
   const logoPath = path.join(__dirname, '../assets/logo.png');
-
-  const logoWidth = 500;
-  const centerX = (doc.page.width - logoWidth) / 2;
-  const centerY = (doc.page.height - logoWidth) / 2;
-
   doc.save();
   doc.opacity(0.06);
-  doc.image(logoPath, centerX, centerY, { width: logoWidth });
+  doc.image(logoPath, 100, 220, { width: 400 });
   doc.restore();
 
-  /* ================= TOP ORANGE BAR ================= */
-  doc.rect(0, 0, doc.page.width, 10).fill('#F97316');
+  /* ========= TOP ORANGE LINE ========= */
+  doc.rect(0, 35, doc.page.width, 10).fill('#EA580C');
 
-  /* ================= COMPANY DETAILS ================= */
+  /* ========= COMPANY ========= */
   doc.fillColor('black')
-    .fontSize(14)
     .font('Helvetica-Bold')
-    .text('Mangalyog Enterprise', 50, 30);
+    .fontSize(14)
+    .text('Mangalyog Enterprise', 50, 55);
 
-  doc.fontSize(10)
-    .font('Helvetica')
-    .text('Near Virbhadreshwar mandir, Ringroad', 50, 50)
-    .text('Latur - 413512', 50, 65)
-    .text(`Mob: ${invoice.companyPhone || '9707874042'}`, 50, 80)
-    .text(`Email: mangalyogentp@gmail.com`, 50, 95)
-    .text(`GSTIN: ${invoice.gst || '27CVTPP0520Q1ZU'}`, 50, 110);
+  doc.font('Helvetica').fontSize(10)
+    .text('Near Virbhadreshwar mandir, Ringroad', 50, 75)
+    .text('Latur - 413512', 50, 90)
+    .text(`Mob. No - ${invoice.companyPhone || '9970874042'}`, 50, 105)
+    .text('E-Mail ID - mangalyogentp@gmail.com', 50, 120)
+    .text(`GSTIN-${invoice.gst || '27CVTPP0520Q1ZU'}`, 50, 135);
 
-  /* ================= DATE & DOC NO ================= */
+  /* ========= RIGHT SIDE ========= */
   const docNum = type === 'Invoice'
     ? invoice.invoiceNumber
     : invoice.quotationNumber;
 
-  doc.fontSize(10)
-    .text(`DATE: ${new Date(invoice.date).toLocaleDateString('en-IN')}`, 400, 30)
-    .text(`${type.toUpperCase()} NO: ${docNum}`, 400, 50);
+  doc.font('Helvetica').fontSize(10)
+    .text(`DATE - ${new Date(invoice.date).toLocaleDateString('en-IN')}`, 400, 55);
 
-  /* ================= TO ================= */
+  doc.moveTo(400, 80).lineTo(550, 80).stroke();
+
+  doc.font('Helvetica-Bold')
+    .text(`${type === 'Invoice' ? 'INVOICE NO.' : 'QUOTE NO.'} ${docNum}`, 400, 100);
+
+  doc.moveTo(400, 120).lineTo(550, 120).stroke();
+
+  /* ========= TO ========= */
   const site = invoice.siteId;
 
-  doc.moveDown(4);
-
-  doc.font('Helvetica-Bold').text('TO:', 50, 150);
+  doc.font('Helvetica-Bold').text('TO:', 50, 180);
   doc.font('Helvetica')
-    .text(site?.name || 'N/A', 50, 165)
-    .text(site?.address || '', 50, 180);
+    .text(site?.name || '', 50, 195)
+    .text(site?.address || '', 50, 210);
 
-  /* ================= FROM ================= */
-  doc.font('Helvetica-Bold').text('From', 300, 150);
+  doc.moveTo(50, 230).lineTo(250, 230).stroke();
+
+  /* ========= FROM ========= */
+  doc.font('Helvetica-Bold').text('From', 350, 180);
+
   doc.font('Helvetica')
-    .text(`Name: ${invoice.senderName || 'Raghuraj Patil'}`, 300, 165)
-    .text(`Company: Mangalyog Enterprise`, 300, 180)
-    .text(`Address: Ringroad, Latur`, 300, 195)
-    .text(`Phone: ${invoice.companyPhone || '9707874042'}`, 300, 210);
+    .text(`Name - ${invoice.senderName || 'Raghuraj Patil'}`, 350, 195)
+    .text('Company Name - Mangalyog Enterprise', 350, 210)
+    .text('Address - Ringroad, Latur', 350, 225)
+    .text(`Phone - ${invoice.companyPhone || '9707874042'}`, 350, 240);
 
   /* ================= TABLE ================= */
-  let tableTop = 250;
+let tableTop = 260;
+const tableWidth = doc.page.width - 100;
+const left = 50;
+const right = doc.page.width - 50;
 
-  const col = {
-    sr: 50,
-    desc: 80,
-    qty: 320,
-    rate: 380,
-    amount: 460
-  };
+// PERFECT COLUMN ALIGNMENT (FIXED)
+const col = {
+  sr: left,
+  srEnd: left + 40,
 
-  doc.rect(50, tableTop, doc.page.width - 100, 25).stroke();
+  desc: left + 40,
+  descEnd: left + 260,
 
-  doc.font('Helvetica-Bold').fontSize(10)
-    .text('#', col.sr + 5, tableTop + 8)
-    .text('ITEM DESCRIPTION', col.desc, tableTop + 8)
-    .text('QTY', col.qty, tableTop + 8)
-    .text('Rate/Qty', col.rate, tableTop + 8)
-    .text('Total Amount', col.amount, tableTop + 8);
+  qty: left + 260,
+  qtyEnd: left + 320,
 
-  let rowY = tableTop + 30;
+  rate: left + 320,
+  rateEnd: left + 400,
 
-  (invoice.items || []).forEach((item, i) => {
-    const amount = item.amount || (item.quantity * item.rate);
+  amount: left + 400,
+  amountEnd: right
+};
 
-    doc.rect(50, rowY - 5, doc.page.width - 100, 40).stroke();
+// HEADER BOX
+doc.rect(left, tableTop, tableWidth, 25).stroke();
 
-    doc.font('Helvetica').fontSize(10)
-      .text(i + 1, col.sr + 5, rowY)
-      .text(item.description, col.desc, rowY, { width: 220 })
-      .text(item.quantity, col.qty, rowY) // ✅ FIXED HERE
-      .text(`Rs.${item.rate.toLocaleString('en-IN')}`, col.rate, rowY)
-      .text(`Rs.${amount.toLocaleString('en-IN')}`, col.amount, rowY);
+// HEADER TEXT
+doc.font('Helvetica-Bold')
+  .text('#', col.sr + 10, tableTop + 8)
+  .text('ITEM DESCRIPTION', col.desc + 5, tableTop + 8)
+  .text('QTY', col.qty + 5, tableTop + 8)
+  .text('Rate/Qty', col.rate + 5, tableTop + 8)
+  .text('Total Amount', col.amount + 5, tableTop + 8);
 
-    rowY += 45;
-  });
+let rowY = tableTop + 25;
 
-  /* ================= TOTAL SECTION ================= */
-  const subtotal = invoice.subtotal || 0;
-  const tax = invoice.taxAmount || 0;
-  const total = invoice.total || 0;
+/* ================= ITEMS ================= */
+(invoice.items || []).forEach((item, i) => {
+  const amount = item.amount || item.quantity * item.rate;
 
-  doc.rect(300, rowY, 250, 80).stroke();
+  doc.rect(left, rowY, tableWidth, 40).stroke();
 
   doc.font('Helvetica')
-    .text('Subtotal', 310, rowY + 10)
-    .text(`Rs.${subtotal.toLocaleString('en-IN')}`, 450, rowY + 10)
+    .text(i + 1, col.sr + 10, rowY + 10)
+    .text(item.description, col.desc + 5, rowY + 5, { width: 200 })
+    .text(item.quantity, col.qty + 5, rowY + 10)
+    .text(`Rs.${item.rate.toLocaleString('en-IN')}`, col.rate + 5, rowY + 10)
+    .text(`Rs.${amount.toLocaleString('en-IN')}`, col.amount + 5, rowY + 10);
 
-    .text(`GST ${invoice.taxRate || 0}%`, 310, rowY + 30)
-    .text(`Rs.${tax.toLocaleString('en-IN')}`, 450, rowY + 30);
+  rowY += 40;
+});
 
+/* ================= EMPTY ROW ================= */
+doc.rect(left, rowY, tableWidth, 40).stroke();
+rowY += 40;
+
+/* ================= TOTAL ================= */
+const totalStartX = col.rate;
+
+doc.rect(left, rowY, tableWidth, 30).stroke();
+doc.text('Subtotal', totalStartX + 5, rowY + 8)
+   .text(`Rs.${(invoice.subtotal || 0).toLocaleString('en-IN')}`, col.amount + 5, rowY + 8);
+rowY += 30;
+
+doc.rect(left, rowY, tableWidth, 30).stroke();
+doc.text(`GST ${invoice.taxRate || 0}%`, totalStartX + 5, rowY + 8)
+   .text(`Rs.${(invoice.taxAmount || 0).toLocaleString('en-IN')}`, col.amount + 5, rowY + 8);
+rowY += 30;
+
+doc.rect(left, rowY, tableWidth, 30).stroke();
+doc.font('Helvetica-Bold')
+  .text('Grand Total', totalStartX + 5, rowY + 8)
+  .text(`Rs.${(invoice.total || 0).toLocaleString('en-IN')}`, col.amount + 5, rowY + 8);
+doc.font('Helvetica');
+
+rowY += 30;
+
+/* ================= IN WORD ================= */
+doc.rect(left, rowY, tableWidth, 30).stroke();
+
+doc.font('Helvetica-Bold')
+  .text('In Word:', left + 10, rowY + 8);
+
+doc.font('Helvetica')
+  .text(
+    numberToWords(Math.floor(invoice.total || 0)) + ' only',
+    left + 100,
+    rowY + 8
+  );
+
+/* ================= PERFECT VERTICAL LINES ================= */
+
+// FINAL HEIGHT (VERY IMPORTANT FIX)
+const finalBottom = rowY + 30;
+
+// DRAW LINES FULL HEIGHT (NO BREAKS)
+[
+  col.srEnd,
+  col.descEnd,
+  col.qtyEnd,
+  col.rateEnd,
+  col.amountEnd
+].forEach(x => {
+  doc.moveTo(x, tableTop)
+     .lineTo(x, finalBottom)
+     .stroke();
+});
+  /* ========= NOTES ========= */
   doc.font('Helvetica-Bold')
-    .text('Grand Total', 310, rowY + 55)
-    .text(`Rs.${total.toLocaleString('en-IN')}`, 450, rowY + 55);
+    .text('Note :', 50, rowY + 50);
 
-  /* ================= NOTES ================= */
-  doc.font('Helvetica-Bold')
-    .text('Note:', 50, rowY + 100);
+  doc.font('Helvetica');
 
-  doc.font("Helvetica").fontSize(9);
+  let notes = Array.isArray(invoice.notes)
+    ? invoice.notes
+    : (invoice.notes || '').split('\n');
 
-  let notesArray = [];
+  let y = rowY + 65;
 
-  // ✅ supports both array & string
-  if (Array.isArray(invoice.notes)) {
-    notesArray = invoice.notes;
-  } else if (typeof invoice.notes === "string") {
-    notesArray = invoice.notes.split("\n");
-  }
-
-  let y = rowY + 115;
-
-  notesArray.forEach((note, index) => {
-    if (note.trim() !== "") {
-      doc.text(`${index + 1}. ${note}`, 50, y, { width: 500 });
-      y += doc.heightOfString(note, { width: 500 }) + 5;
+  notes.forEach((note, i) => {
+    if (note.trim()) {
+      doc.text(`${i + 1}. ${note}`, 50, y);
+      y += 15;
     }
   });
 
-  /* ================= BOTTOM ORANGE BAR ================= */
-  doc.rect(0, doc.page.height - 20, doc.page.width, 10).fill('#F97316');
+  /* ========= BOTTOM ORANGE ========= */
+  doc.rect(0, doc.page.height - 40, doc.page.width, 10).fill('#EA580C');
 
   return doc;
 };
