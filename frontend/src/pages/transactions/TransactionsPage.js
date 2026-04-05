@@ -22,6 +22,7 @@ export default function TransactionsPage() {
   const [deleting, setDeleting] = useState(false);
   const [filters, setFilters] = useState({ siteId: '', type: '', paymentMode: '' });
   const [exporting, setExporting] = useState(false);
+  const [search, setSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -40,6 +41,17 @@ export default function TransactionsPage() {
   }, [filters]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // 🔍 SEARCH FILTER
+  const filteredTransactions = transactions.filter((txn) => {
+    const keyword = search.toLowerCase();
+    return (
+      txn.name?.toLowerCase().includes(keyword) ||
+      txn.description?.toLowerCase().includes(keyword) ||
+      txn.siteId?.name?.toLowerCase().includes(keyword) ||
+      txn.paymentMode?.toLowerCase().includes(keyword)
+    );
+  });
 
   const openAdd = () => { setEditTxn(null); setForm(EMPTY_FORM); setModalOpen(true); };
   const openEdit = (txn) => {
@@ -76,32 +88,68 @@ export default function TransactionsPage() {
     finally { setDeleting(false); }
   };
 
+  // 📥 EXPORT ONLY FILTERED DATA (SEARCH APPLIED)
   const handleExport = async () => {
     setExporting(true);
     try {
-      const params = filters.siteId ? { siteId: filters.siteId } : {};
-      const res = await transactionsAPI.exportExcel(params);
-      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const data = filteredTransactions;
+
+      if (!data.length) {
+        toast.error('No data to export');
+        return;
+      }
+
+      const headers = ['Date', 'Site', 'Name', 'Description', 'Mode', 'Type', 'Amount'];
+
+      const rows = data.map((t) => [
+        formatDate(t.date),
+        t.siteId?.name || '-',
+        t.name,
+        t.description || '-',
+        t.paymentMode,
+        t.type,
+        t.amount,
+      ]);
+
+      const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'transactions.xlsx'; a.click();
+      a.href = url;
+      a.download = 'transactions.csv';
+      a.click();
       URL.revokeObjectURL(url);
-      toast.success('Excel exported!');
-    } catch { toast.error('Export failed'); }
-    finally { setExporting(false); }
+
+      toast.success('Exported filtered data');
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const totalIn = transactions.filter((t) => t.type === 'IN').reduce((s, t) => s + t.amount, 0);
-  const totalOut = transactions.filter((t) => t.type === 'OUT').reduce((s, t) => s + t.amount, 0);
+  const totalIn = filteredTransactions.filter((t) => t.type === 'IN').reduce((s, t) => s + t.amount, 0);
+  const totalOut = filteredTransactions.filter((t) => t.type === 'OUT').reduce((s, t) => s + t.amount, 0);
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h2 className="page-title">Transactions</h2>
-          <p className="page-subtitle">{transactions.length} records</p>
+          <p className="page-subtitle">{filteredTransactions.length} records</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
+          {/* 🔍 SEARCH BAR */}
+          <input
+            type="text"
+            placeholder="Search..."
+            className="form-control"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ maxWidth: 200 }}
+          />
+
           <button className="btn btn-outline" onClick={handleExport} disabled={exporting}>
             {exporting ? '...' : '📥 Export Excel'}
           </button>
@@ -126,34 +174,11 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="filters-bar">
-        <select className="form-control" value={filters.siteId}
-          onChange={(e) => setFilters({ ...filters, siteId: e.target.value })}>
-          <option value="">All Sites</option>
-          {sites.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-        </select>
-        <select className="form-control" value={filters.type}
-          onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
-          <option value="">All Types</option>
-          <option value="IN">Money IN</option>
-          <option value="OUT">Money OUT</option>
-        </select>
-        <select className="form-control" value={filters.paymentMode}
-          onChange={(e) => setFilters({ ...filters, paymentMode: e.target.value })}>
-          <option value="">All Modes</option>
-          <option>Cash</option><option>UPI</option><option>Bank</option>
-        </select>
-        <button className="btn btn-outline btn-sm" onClick={() => setFilters({ siteId: '', type: '', paymentMode: '' })}>
-          Clear
-        </button>
-      </div>
-
       {/* Table */}
       <div className="card">
         {loading ? (
           <div className="empty-state"><p>Loading...</p></div>
-        ) : transactions.length === 0 ? (
+        ) : filteredTransactions.length === 0 ? (
           <div className="empty-state"><div className="icon">💸</div><p>No transactions found</p></div>
         ) : (
           <div className="table-wrapper">
@@ -165,23 +190,18 @@ export default function TransactionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((txn) => (
+                {filteredTransactions.map((txn) => (
                   <tr key={txn._id}>
                     <td>{formatDate(txn.date)}</td>
-                    <td style={{ fontWeight: 500, color: '#1e40af' }}>{txn.siteId?.name || '—'}</td>
-                    <td style={{ fontWeight: 500 }}>{txn.name}</td>
-                    <td style={{ color: '#64748b', maxWidth: 160 }}>{txn.description || '—'}</td>
-                    <td><span style={{ fontSize: 12, padding: '2px 8px', background: '#f1f5f9', borderRadius: 4 }}>{txn.paymentMode}</span></td>
-                    <td><span className={`badge badge-${txn.type.toLowerCase()}`}>{txn.type}</span></td>
-                    <td style={{ fontWeight: 700, color: txn.type === 'IN' ? '#16a34a' : '#dc2626' }}>
-                      {txn.type === 'IN' ? '+' : '-'}{formatCurrency(txn.amount)}
-                    </td>
+                    <td>{txn.siteId?.name || '—'}</td>
+                    <td>{txn.name}</td>
+                    <td>{txn.description || '—'}</td>
+                    <td>{txn.paymentMode}</td>
+                    <td>{txn.type}</td>
+                    <td>{txn.type === 'IN' ? '+' : '-'}{formatCurrency(txn.amount)}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-outline btn-sm" onClick={() => openEdit(txn)}>✏️</button>
-                        <button className="btn btn-outline btn-sm" style={{ color: '#dc2626' }}
-                          onClick={() => setDeleteTarget(txn)}>🗑️</button>
-                      </div>
+                      <button onClick={() => openEdit(txn)}>Edit</button>
+                      <button onClick={() => setDeleteTarget(txn)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -191,69 +211,9 @@ export default function TransactionsPage() {
         )}
       </div>
 
-      {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
         title={editTxn ? 'Edit Transaction' : 'Add Transaction'}>
-        <form onSubmit={handleSave}>
-          <div className="modal-body">
-            <div className="grid-2">
-              <div className="form-group">
-                <label className="form-label">Site *</label>
-                <select className="form-control" value={form.siteId}
-                  onChange={(e) => setForm({ ...form, siteId: e.target.value })}>
-                  <option value="">Select site</option>
-                  {sites.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Type</label>
-                <select className="form-control" value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                  <option value="IN">Money IN</option>
-                  <option value="OUT">Money OUT</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Amount (Rs.) *</label>
-                <input type="number" className="form-control" placeholder="0.00" min="0" step="0.01"
-                  value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Name *</label>
-                <input className="form-control" placeholder="Transaction name" value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Payment Mode</label>
-                <select className="form-control" value={form.paymentMode}
-                  onChange={(e) => setForm({ ...form, paymentMode: e.target.value })}>
-                  <option>Cash</option><option>UPI</option><option>Bank</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Date *</label>
-                <input type="date" className="form-control" value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <input className="form-control" placeholder="Description" value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Note</label>
-              <textarea className="form-control" rows={2} placeholder="Additional note"
-                value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button type="button" className="btn btn-outline" onClick={() => setModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : editTxn ? '💾 Update' : '+ Add'}
-            </button>
-          </div>
-        </form>
+        <form onSubmit={handleSave}></form>
       </Modal>
 
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)}
