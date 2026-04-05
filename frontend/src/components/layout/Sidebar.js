@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
-import logo from '../../assets/mangalyogfinallogo.png';
+import logo from '../../assets/logo.png';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: '📊', end: true, section: 'Main' },
